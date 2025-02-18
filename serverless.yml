@@ -1,0 +1,30 @@
+service: aws-typescript-api
+
+frameworkVersion: "4"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+
+plugins:
+  - serverless-offline
+
+custom:
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    exclude: []
+    target: "node18"
+    platform: "node"
+    concurrency: 10
+
+functions:
+  hello:
+    handler: src/handler.hello
+    events:
+      - http:
+          path: /hello
+          method: get

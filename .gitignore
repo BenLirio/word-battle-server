@@ -1,0 +1,21 @@
+# package directories
+node_modules
+jspm_packages
+
+# Serverless directories
+.serverless
+.build
+.esbuild
+
+# TypeScript
+*.js
+*.js.map
+!jest.config.js
+!esbuild.config.js
+
+# ENV files
+.env*
+
+# IDE
+.idea
+.vscode

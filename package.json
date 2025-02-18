@@ -1,0 +1,25 @@
+{
+  "name": "word-battle-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "serverless offline",
+    "deploy": "serverless deploy",
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.147",
+    "@types/node": "^22.13.4",
+    "esbuild": "^0.25.0",
+    "serverless": "^4.6.3",
+    "serverless-offline": "^14.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}
