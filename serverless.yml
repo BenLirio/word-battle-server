@@ -1,4 +1,4 @@
-service: aws-typescript-api
+service: word-battle-service
 
 frameworkVersion: "4"
 
@@ -22,9 +22,9 @@ custom:
     concurrency: 10
 
 functions:
-  hello:
-    handler: src/handler.hello
+  app:
+    handler: src/handler.app
     events:
       - http:
-          path: /hello
-          method: get
+          path: /app
+          method: post
