@@ -1,5 +1,9 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
-import { FunctionInvocationRequest, FunctionInvocationResponse } from "./types";
+import {
+  FunctionInvocationRequest,
+  FunctionInvocationResponse,
+  FunctionOutput,
+} from "./types";
 import { functionMap, inputValidationMap } from "./functions";
 import * as AWS from "aws-sdk";
 
@@ -42,10 +46,19 @@ export const app: APIGatewayProxyHandler = async (event) => {
       }),
     };
   }
-
+  let output: FunctionOutput;
+  try {
+    output = await functionMap[type](ddb)(input);
+  } catch (error: any) {
+    console.error(error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify(error.message),
+    };
+  }
   const result: FunctionInvocationResponse = {
     type,
-    output: await functionMap[type](ddb)(input),
+    output,
   };
   return {
     statusCode: 200,
