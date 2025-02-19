@@ -1,0 +1,7 @@
+{
+  "type": "registerUser",
+  "input": {
+    "username": "string",
+    "word": "string"
+  }
+}
