@@ -24,6 +24,8 @@
   },
   "dependencies": {
     "aws-sdk": "^2.1692.0",
-    "uuid": "^11.0.5"
+    "openai": "^4.86.2",
+    "uuid": "^11.0.5",
+    "word-battle-types": "^1.0.12"
   }
 }
