@@ -1,11 +1,11 @@
-import { APIGatewayProxyHandler } from "aws-lambda";
+import { APIGatewayProxyEvent } from "aws-lambda";
 import * as AWS from "aws-sdk";
 import { WordBattleRequest } from "word-battle-types";
 import { functionMap } from "./functions";
 
 const ddb = new AWS.DynamoDB.DocumentClient();
 
-export const app: APIGatewayProxyHandler = async (event) => {
+export const app: any = async (event: APIGatewayProxyEvent) => {
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,

@@ -13,6 +13,17 @@ const AIResponse = z.object({
   battleDescription: z.string(),
 });
 
+const K_FACTOR = 24;
+
+const calculateElo = (
+  playerRating: number,
+  opponentRating: number,
+  score: number
+): number => {
+  const expectedScore = 1 / (1 + 10 ** ((opponentRating - playerRating) / 400));
+  return playerRating + K_FACTOR * (score - expectedScore);
+};
+
 export const getUser =
   ({ ddb }: FunctionContext) =>
   async ({ uuid }: GetUserRequest): Promise<GetUserResponse> => {
@@ -82,14 +93,23 @@ export const battle =
       response_format: zodResponseFormat(AIResponse, "event"),
     });
 
+    const eloBefore = userRecord.elo;
     const firstPlayerWon =
       completion.choices[0].message.parsed?.firstPlayerWon!;
     const winner = firstPlayerWon ? userRecord : randomOpponent;
     const loser = firstPlayerWon ? randomOpponent : userRecord;
 
-    // Adjust elo scores
-    winner.elo += 10;
-    loser.elo -= 10;
+    // Calculate new Elo scores
+    const winnerScore = 1;
+    const loserScore = 0;
+
+    winner.elo = calculateElo(winner.elo, loser.elo, winnerScore);
+    loser.elo = calculateElo(loser.elo, winner.elo, loserScore);
+
+    const eloChange =
+      winner.uuid === userRecord.uuid
+        ? winner.elo - eloBefore
+        : loser.elo - eloBefore;
 
     // Update the users in the database
     await ddb.put({ TableName: TABLE_NAME, Item: winner }).promise();
@@ -102,6 +122,7 @@ export const battle =
       otherUserRecord: randomOpponent,
       winnerUserRecord: winner,
       loserUserRecord: loser,
+      eloChange,
       message: battleDescription,
     };
   };
