@@ -11,19 +11,19 @@ export const listTopUsers =
   async ({}: ListTopUsersRequest): Promise<ListTopUsersResponse> => {
     const params = {
       TableName: TABLE_NAME,
-      Limit: 10,
-      ScanIndexForward: false, // Sort in descending order
-      IndexName: "elo-index", // Assuming you have a secondary index on the elo field
     };
 
     const result = await ddb.scan(params).promise();
-    const topUsers = result.Items as UserRecord[];
+    const allUsers = result.Items as UserRecord[];
 
-    if (!topUsers || topUsers.length === 0) {
+    if (!allUsers || allUsers.length === 0) {
       throw new Error("No users found");
     }
 
+    // Sort users by elo in descending order
+    const sortedUsers = allUsers.sort((a, b) => b.elo - a.elo);
+
     return {
-      userRecords: topUsers,
+      userRecords: sortedUsers,
     };
   };
