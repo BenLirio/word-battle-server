@@ -1,9 +1,17 @@
 import { TABLE_NAME } from "src/constants";
 import { FunctionContext } from "src/types";
 import { GetUserRequest, GetUserResponse, UserRecord } from "word-battle-types";
+import { zodResponseFormat } from "openai/helpers/zod";
 import { BattleRequest, BattleResponse } from "word-battle-types/dist/battle";
+import OpenAI from "openai";
+import { z } from "zod";
 
-const OpenAI = require("openai");
+const openai = new OpenAI();
+
+const AIResponse = z.object({
+  firstPlayerWon: z.boolean(),
+  battleDescription: z.string(),
+});
 
 export const getUser =
   ({ ddb }: FunctionContext) =>
@@ -61,9 +69,23 @@ export const battle =
     const randomOpponent =
       opponents[Math.floor(Math.random() * opponents.length)];
 
-    // Randomly decide the winner
-    const winner = Math.random() < 0.5 ? userRecord : randomOpponent;
-    const loser = winner === userRecord ? randomOpponent : userRecord;
+    // Use OpenAI to determine the winner and generate a message
+    const completion = await openai.beta.chat.completions.parse({
+      model: "gpt-4o-2024-08-06",
+      messages: [
+        { role: "system", content: "Determine the winner of the battle" },
+        {
+          role: "user",
+          content: `First players word: "${userRecord.word}", Second players word: "${randomOpponent.word}". In a battle between "${userRecord.word}" and "${randomOpponent.word}", who would win? Give me a fun creative description of the battle along with who win. The description should be around 3-4 sentences.`,
+        },
+      ],
+      response_format: zodResponseFormat(AIResponse, "event"),
+    });
+
+    const firstPlayerWon =
+      completion.choices[0].message.parsed?.firstPlayerWon!;
+    const winner = firstPlayerWon ? userRecord : randomOpponent;
+    const loser = firstPlayerWon ? randomOpponent : userRecord;
 
     // Adjust elo scores
     winner.elo += 10;
@@ -73,11 +95,13 @@ export const battle =
     await ddb.put({ TableName: TABLE_NAME, Item: winner }).promise();
     await ddb.put({ TableName: TABLE_NAME, Item: loser }).promise();
 
+    const battleDescription =
+      completion.choices[0].message.parsed?.battleDescription!;
     return {
       userRecord,
       otherUserRecord: randomOpponent,
       winnerUserRecord: winner,
       loserUserRecord: loser,
-      message: `${winner.username} won against ${loser.username}`,
+      message: battleDescription,
     };
   };
