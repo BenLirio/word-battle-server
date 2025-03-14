@@ -59,8 +59,8 @@ export const registerUser =
     if (username.length < 3 || username.length > 20) {
       throw new Error("Username must be between 3 and 20 characters");
     }
-    if (word.length < 3 || word.length > 50) {
-      throw new Error("Word must be between 3 and 50 characters");
+    if (word.length < 3 || word.length > 200) {
+      throw new Error("Word must be between 3 and 200 characters");
     }
     const completion = await openai.beta.chat.completions.parse({
       model: "gpt-4o-mini",
