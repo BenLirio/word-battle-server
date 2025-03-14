@@ -10,7 +10,7 @@ const openai = new OpenAI();
 
 const AIResponse = z.object({
   firstPlayerWon: z.boolean(),
-  battleDescription: z.string(),
+  reasonForWin: z.string(),
 });
 
 const K_FACTOR = 24;
@@ -87,7 +87,7 @@ export const battle =
         { role: "system", content: "Determine the winner of the battle" },
         {
           role: "user",
-          content: `First players word: "${userRecord.word}", Second players word: "${randomOpponent.word}". In a battle between "${userRecord.word}" and "${randomOpponent.word}", who would win? Give me a fun creative description of the battle along with who win. The description should be around 3-4 sentences.`,
+          content: `First players word: "${userRecord.word}", Second players word: "${randomOpponent.word}". In a battle between "${userRecord.word}" and "${randomOpponent.word}", who would win? Give a one sentence reason why they would win.`,
         },
       ],
       response_format: zodResponseFormat(AIResponse, "event"),
@@ -116,7 +116,7 @@ export const battle =
     await ddb.put({ TableName: TABLE_NAME, Item: loser }).promise();
 
     const battleDescription =
-      completion.choices[0].message.parsed?.battleDescription!;
+      completion.choices[0].message.parsed?.reasonForWin!;
     return {
       userRecord,
       otherUserRecord: randomOpponent,
