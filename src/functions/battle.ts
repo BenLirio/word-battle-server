@@ -70,7 +70,9 @@ export const battle =
     const allUsers = allUsersResult.Items as UserRecord[];
 
     // Filter out the current user
-    const opponents = allUsers.filter((user) => user.uuid !== uuid);
+    const opponents = allUsers
+      .filter((user) => user.uuid !== uuid)
+      .filter(({ elo }) => Math.abs(userRecord.elo - elo) < 200);
 
     if (opponents.length === 0) {
       throw new Error("No opponents found");
