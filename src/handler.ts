@@ -20,13 +20,26 @@ export const app: any = async (event: APIGatewayProxyEvent) => {
   }
 
   const { funcName, data }: WordBattleRequest = JSON.parse(event.body || "{}");
-  return {
-    statusCode: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*", // Or specify your domain
-      "Access-Control-Allow-Credentials": true,
-      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Api-Key",
-    },
-    body: JSON.stringify(await functionMap[funcName]({ ddb })(data as any)),
-  };
+  try {
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*", // Or specify your domain
+        "Access-Control-Allow-Credentials": true,
+        "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Api-Key",
+      },
+      body: JSON.stringify(await functionMap[funcName]({ ddb })(data as any)),
+    };
+  } catch (e: any) {
+    console.error(e);
+    return {
+      statusCode: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*", // Or specify your domain
+        "Access-Control-Allow-Credentials": true,
+        "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Api-Key",
+      },
+      body: JSON.stringify({ error: e.message }),
+    };
+  }
 };

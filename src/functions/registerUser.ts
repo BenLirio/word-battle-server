@@ -47,6 +47,12 @@ export const registerUser =
     word,
   }: RegisterUserRequest): Promise<RegisterUserResponse> => {
     const uuid = uuidv4();
+    if (username.length < 3 || username.length > 20) {
+      throw new Error("Username must be between 3 and 20 characters");
+    }
+    if (word.length < 3 || word.length > 200) {
+      throw new Error("Word must be between 3 and 200 characters");
+    }
     return {
       userRecord: await createUserInDatabase(ctxt)({ uuid, username, word }),
     };
