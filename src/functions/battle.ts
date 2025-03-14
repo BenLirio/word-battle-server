@@ -81,13 +81,16 @@ export const battle =
       opponents[Math.floor(Math.random() * opponents.length)];
 
     // Use OpenAI to determine the winner and generate a message
+    const swapUser = Math.random() < 0.5;
+    let firstPlayer = swapUser ? randomOpponent : userRecord;
+    let secondPlayer = swapUser ? userRecord : randomOpponent;
     const completion = await openai.beta.chat.completions.parse({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: "Determine the winner of the battle" },
         {
           role: "user",
-          content: `First players word: "${userRecord.word}", Second players word: "${randomOpponent.word}". In a battle between "${userRecord.word}" and "${randomOpponent.word}", who would win? Give a one sentence reason why they would win.`,
+          content: `First players word: "${firstPlayer.word}", Second players word: "${secondPlayer.word}". In a battle between "${firstPlayer.word}" and "${secondPlayer.word}", who would win? Give a one sentence reason why they would win.`,
         },
       ],
       response_format: zodResponseFormat(AIResponse, "event"),
