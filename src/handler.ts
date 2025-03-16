@@ -3,21 +3,35 @@ import * as AWS from "aws-sdk";
 import { WordBattleRequest } from "word-battle-types";
 import { functionMap } from "./functions";
 
+const SHARED_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Credentials": true,
+  "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Api-Key",
+};
+
 const ddb = new AWS.DynamoDB.DocumentClient();
+
+const handleOptions = () => ({
+  statusCode: 200,
+  headers: {
+    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+    ...SHARED_HEADERS,
+  },
+  body: "",
+});
+
+const handleFailure = (error: any) => ({
+  statusCode: 500,
+  headers: {
+    ...SHARED_HEADERS,
+  },
+  body: JSON.stringify({ error: error.message }),
+});
 
 export const app: any = async (event: APIGatewayProxyEvent) => {
   console.log("event", event);
   if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Api-Key",
-        "Access-Control-Allow-Credentials": true,
-      },
-      body: "",
-    };
+    return handleOptions();
   }
 
   const { funcName, data }: WordBattleRequest = JSON.parse(event.body || "{}");
@@ -31,22 +45,12 @@ export const app: any = async (event: APIGatewayProxyEvent) => {
     return {
       statusCode: 200,
       headers: {
-        "Access-Control-Allow-Origin": "*", // Or specify your domain
-        "Access-Control-Allow-Credentials": true,
-        "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Api-Key",
+        ...SHARED_HEADERS,
       },
       body: JSON.stringify(response),
     };
   } catch (e: any) {
     console.error(e);
-    return {
-      statusCode: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "*", // Or specify your domain
-        "Access-Control-Allow-Credentials": true,
-        "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Api-Key",
-      },
-      body: JSON.stringify({ error: e.message }),
-    };
+    return handleFailure(e);
   }
 };
