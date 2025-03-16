@@ -81,6 +81,7 @@ export const battle =
     // Pick a random opponent
     const randomOpponent =
       opponents[Math.floor(Math.random() * opponents.length)];
+    const swapOrder = Math.random() < 0.5;
 
     // Use OpenAI to determine the winner and generate a message
     const completion = await openai.beta.chat.completions.parse({
@@ -89,7 +90,15 @@ export const battle =
         { role: "system", content: "Determine the winner of the battle" },
         {
           role: "user",
-          content: `First players word: "${userRecord.word}", Second players word: "${randomOpponent.word}". In a battle between "${userRecord.word}" and "${randomOpponent.word}", who would win? Give a one sentence reason why they would win.`,
+          content: `First players word: "${
+            (swapOrder ? userRecord : randomOpponent).word
+          }", Second players word: "${
+            (swapOrder ? randomOpponent : userRecord).word
+          }". In a battle between "${
+            (swapOrder ? userRecord : randomOpponent).word
+          }" and "${
+            (swapOrder ? randomOpponent : userRecord).word
+          }", who would win? Give a one sentence reason why they would win.`,
         },
       ],
       response_format: zodResponseFormat(AIResponse, "event"),
@@ -97,7 +106,7 @@ export const battle =
 
     const eloBefore = userRecord.elo;
     const firstPlayerWon =
-      completion.choices[0].message.parsed?.firstPlayerWon!;
+      completion.choices[0].message.parsed?.firstPlayerWon! === swapOrder;
     const winner = firstPlayerWon ? userRecord : randomOpponent;
     const loser = firstPlayerWon ? randomOpponent : userRecord;
 
