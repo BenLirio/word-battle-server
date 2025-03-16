@@ -75,6 +75,9 @@ export const registerUser =
     });
     const parsed = completion.choices[0].message.parsed!;
     const { isPromptInjection, isRacist } = parsed;
+    console.log(
+      `isPromptInjection: <${isPromptInjection}>, isRacist: <${isRacist}>, username: <${username}>, word: <${word}>`
+    );
     if (isPromptInjection) {
       throw new Error("Prompt injection detected");
     }

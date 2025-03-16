@@ -6,6 +6,7 @@ import { functionMap } from "./functions";
 const ddb = new AWS.DynamoDB.DocumentClient();
 
 export const app: any = async (event: APIGatewayProxyEvent) => {
+  console.log("event", event);
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
@@ -21,6 +22,12 @@ export const app: any = async (event: APIGatewayProxyEvent) => {
 
   const { funcName, data }: WordBattleRequest = JSON.parse(event.body || "{}");
   try {
+    const response = await functionMap[funcName]({ ddb })(data as any);
+    console.log({
+      funcName,
+      input: data,
+      response,
+    });
     return {
       statusCode: 200,
       headers: {
@@ -28,7 +35,7 @@ export const app: any = async (event: APIGatewayProxyEvent) => {
         "Access-Control-Allow-Credentials": true,
         "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Api-Key",
       },
-      body: JSON.stringify(await functionMap[funcName]({ ddb })(data as any)),
+      body: JSON.stringify(response),
     };
   } catch (e: any) {
     console.error(e);
