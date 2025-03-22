@@ -26,7 +26,7 @@
     "aws-sdk": "^2.1692.0",
     "openai": "^4.86.2",
     "uuid": "^11.0.5",
-    "word-battle-types": "^1.0.15",
+    "word-battle-types": "^1.0.16",
     "zod": "^3.24.2"
   }
 }

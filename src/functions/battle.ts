@@ -136,13 +136,14 @@ export const battle =
       eloChange,
       message: battleDescription,
     };
+    const timestamp = Date.now();
 
     // Save the battle result to the history table
     const historyParams: { TableName: string; Item: BattleRecord } = {
       TableName: HISTORY_TABLE_NAME,
       Item: {
         hashKey: uuid,
-        sortKey: Date.now(),
+        sortKey: timestamp,
         user: JSON.stringify(userRecord),
         opponent: JSON.stringify(randomOpponent),
         winner: JSON.stringify(winner),
@@ -154,5 +155,8 @@ export const battle =
 
     await ddb.put(historyParams).promise();
 
-    return result;
+    return {
+      ...result,
+      timestamp,
+    };
   };
