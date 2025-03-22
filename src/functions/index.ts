@@ -4,6 +4,7 @@ import { getUser } from "./getUser";
 import { registerUser } from "./registerUser";
 import { listTopUsers } from "./listTopUsers";
 import { battle } from "./battle";
+import { getBattle } from "./getBattle";
 
 export const functionMap: Record<
   WordBattleFunctionName,
@@ -13,4 +14,5 @@ export const functionMap: Record<
   [WordBattleFunctionName.REGISTER_USER]: registerUser,
   [WordBattleFunctionName.LIST_TOP_USERS]: listTopUsers,
   [WordBattleFunctionName.BATTLE]: battle,
+  [WordBattleFunctionName.GET_BATTLE]: getBattle,
 };

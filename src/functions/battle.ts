@@ -1,5 +1,5 @@
-import { TABLE_NAME } from "src/constants";
-import { FunctionContext } from "src/types";
+import { HISTORY_TABLE_NAME, TABLE_NAME } from "src/constants";
+import { BattleRecord, FunctionContext } from "src/types";
 import { GetUserRequest, GetUserResponse, UserRecord } from "word-battle-types";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { BattleRequest, BattleResponse } from "word-battle-types/dist/battle";
@@ -128,7 +128,7 @@ export const battle =
 
     const battleDescription =
       completion.choices[0].message.parsed?.reasonForWin!;
-    return {
+    const result = {
       userRecord,
       otherUserRecord: randomOpponent,
       winnerUserRecord: winner,
@@ -136,4 +136,23 @@ export const battle =
       eloChange,
       message: battleDescription,
     };
+
+    // Save the battle result to the history table
+    const historyParams: { TableName: string; Item: BattleRecord } = {
+      TableName: HISTORY_TABLE_NAME,
+      Item: {
+        hashKey: uuid,
+        sortKey: Date.now(),
+        user: JSON.stringify(userRecord),
+        opponent: JSON.stringify(randomOpponent),
+        winner: JSON.stringify(winner),
+        loser: JSON.stringify(loser),
+        eloChange,
+        battleDescription,
+      },
+    };
+
+    await ddb.put(historyParams).promise();
+
+    return result;
   };
