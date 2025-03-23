@@ -1,8 +1,11 @@
+import { UserRecord } from "word-battle-types";
+
 export interface FunctionContext {
   ddb: AWS.DynamoDB.DocumentClient;
+  s3: AWS.S3;
 }
 
-export interface BattleRecord {
+export interface DBBattleRecord {
   hashKey: string;
   sortKey: number;
   user: string;

@@ -1,5 +1,5 @@
 import { HISTORY_TABLE_NAME, TABLE_NAME } from "src/constants";
-import { BattleRecord, FunctionContext } from "src/types";
+import { DBBattleRecord, FunctionContext } from "src/types";
 import { GetUserRequest, GetUserResponse, UserRecord } from "word-battle-types";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { BattleRequest, BattleResponse } from "word-battle-types/dist/battle";
@@ -159,7 +159,7 @@ export const battle =
     const timestamp = Date.now();
 
     // Save the battle result to the history table
-    const historyParams: { TableName: string; Item: BattleRecord } = {
+    const historyParams: { TableName: string; Item: DBBattleRecord } = {
       TableName: HISTORY_TABLE_NAME,
       Item: {
         hashKey: uuid,

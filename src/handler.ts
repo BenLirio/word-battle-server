@@ -10,6 +10,7 @@ const SHARED_HEADERS = {
 };
 
 const ddb = new AWS.DynamoDB.DocumentClient();
+const s3 = new AWS.S3();
 
 const handleOptions = () => ({
   statusCode: 200,
@@ -36,7 +37,7 @@ export const app: any = async (event: APIGatewayProxyEvent) => {
 
   const { funcName, data }: WordBattleRequest = JSON.parse(event.body || "{}");
   try {
-    const response = await functionMap[funcName]({ ddb })(data as any);
+    const response = await functionMap[funcName]({ ddb, s3 })(data as any);
     console.log({
       funcName,
       input: data,

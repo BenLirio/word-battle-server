@@ -1,5 +1,5 @@
 import { HISTORY_TABLE_NAME } from "src/constants";
-import { BattleRecord, FunctionContext } from "src/types";
+import { DBBattleRecord, FunctionContext } from "src/types";
 import { UserRecord } from "word-battle-types";
 import {
   GetBattleRequest,
@@ -18,18 +18,18 @@ export const getBattle =
     };
 
     const battleResult = await ddb.get(battleParams).promise();
-    const battleRecord = battleResult.Item as BattleRecord;
+    const DBBattleRecord = battleResult.Item as DBBattleRecord;
 
-    if (!battleRecord) {
+    if (!DBBattleRecord) {
       throw new Error("Battle not found");
     }
 
     return {
-      userRecord: JSON.parse(battleRecord.user) as UserRecord,
-      otherUserRecord: JSON.parse(battleRecord.opponent) as UserRecord,
-      winnerUserRecord: JSON.parse(battleRecord.winner) as UserRecord,
-      loserUserRecord: JSON.parse(battleRecord.loser) as UserRecord,
-      eloChange: battleRecord.eloChange,
-      message: battleRecord.battleDescription,
+      userRecord: JSON.parse(DBBattleRecord.user) as UserRecord,
+      otherUserRecord: JSON.parse(DBBattleRecord.opponent) as UserRecord,
+      winnerUserRecord: JSON.parse(DBBattleRecord.winner) as UserRecord,
+      loserUserRecord: JSON.parse(DBBattleRecord.loser) as UserRecord,
+      eloChange: DBBattleRecord.eloChange,
+      message: DBBattleRecord.battleDescription,
     };
   };
