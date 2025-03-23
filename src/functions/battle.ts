@@ -60,13 +60,33 @@ export const battle =
 
     const userResult = await ddb.get(userParams).promise();
     const userRecord = userResult.Item as UserRecord;
+    const leaderboard: undefined | string = userRecord.leaderboard;
 
     if (!userRecord) {
       throw new Error("User not found");
     }
 
-    // Fetch all users (this is just an example, in a real scenario you might want to use a more efficient query)
-    const allUsersResult = await ddb.scan({ TableName: TABLE_NAME }).promise();
+    let scanParams: AWS.DynamoDB.DocumentClient.ScanInput = {
+      TableName: TABLE_NAME,
+    };
+
+    if (leaderboard) {
+      scanParams = {
+        ...scanParams,
+        FilterExpression: "leaderboard = :leaderboard",
+        ExpressionAttributeValues: {
+          ":leaderboard": leaderboard,
+        },
+      };
+    } else {
+      scanParams = {
+        ...scanParams,
+        FilterExpression: "attribute_not_exists(leaderboard)",
+      };
+    }
+
+    // Fetch all users based on leaderboard
+    const allUsersResult = await ddb.scan(scanParams).promise();
     const allUsers = allUsersResult.Items as UserRecord[];
 
     // Filter out the current user

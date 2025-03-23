@@ -33,16 +33,19 @@ const createUserInDatabase =
     uuid,
     username,
     word,
+    leaderboard,
   }: {
     uuid: string;
     username: string;
     word: string;
+    leaderboard?: string;
   }) => {
     const userRecord: UserRecord = {
       uuid,
       username,
       word,
       elo: 1000,
+      leaderboard,
     };
     const userParams = {
       TableName,
@@ -63,6 +66,7 @@ export const registerUser =
   async ({
     username,
     word,
+    leaderboard,
   }: RegisterUserRequest): Promise<RegisterUserResponse> => {
     const uuid = uuidv4();
     if (username.length < 3 || username.length > 20) {
@@ -99,6 +103,11 @@ export const registerUser =
     }
 
     return {
-      userRecord: await createUserInDatabase(ctxt)({ uuid, username, word }),
+      userRecord: await createUserInDatabase(ctxt)({
+        uuid,
+        username,
+        word,
+        leaderboard,
+      }),
     };
   };

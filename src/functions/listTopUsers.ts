@@ -8,10 +8,27 @@ import {
 
 export const listTopUsers =
   ({ ddb }: FunctionContext) =>
-  async ({}: ListTopUsersRequest): Promise<ListTopUsersResponse> => {
-    const params = {
+  async ({
+    leaderboard,
+  }: ListTopUsersRequest): Promise<ListTopUsersResponse> => {
+    let params: AWS.DynamoDB.DocumentClient.ScanInput = {
       TableName: TABLE_NAME,
     };
+
+    if (leaderboard) {
+      params = {
+        ...params,
+        FilterExpression: "leaderboard = :leaderboard",
+        ExpressionAttributeValues: {
+          ":leaderboard": leaderboard,
+        },
+      };
+    } else {
+      params = {
+        ...params,
+        FilterExpression: "attribute_not_exists(leaderboard)",
+      };
+    }
 
     const result = await ddb.scan(params).promise();
     const allUsers = result.Items as UserRecord[];
