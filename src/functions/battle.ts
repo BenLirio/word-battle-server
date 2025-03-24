@@ -1,9 +1,9 @@
+import OpenAI from "openai";
+import { zodResponseFormat } from "openai/helpers/zod";
 import { HISTORY_TABLE_NAME, TABLE_NAME } from "src/constants";
 import { DBBattleRecord, FunctionContext } from "src/types";
-import { GetUserRequest, GetUserResponse, UserRecord } from "word-battle-types";
-import { zodResponseFormat } from "openai/helpers/zod";
+import { UserRecord } from "word-battle-types";
 import { BattleRequest, BattleResponse } from "word-battle-types/dist/battle";
-import OpenAI from "openai";
 import { z } from "zod";
 
 const openai = new OpenAI();
@@ -23,29 +23,6 @@ const calculateElo = (
   const expectedScore = 1 / (1 + 10 ** ((opponentRating - playerRating) / 400));
   return playerRating + K_FACTOR * (score - expectedScore);
 };
-
-export const getUser =
-  ({ ddb }: FunctionContext) =>
-  async ({ uuid }: GetUserRequest): Promise<GetUserResponse> => {
-    const userParams = {
-      TableName: TABLE_NAME,
-      Key: {
-        hashKey: uuid,
-        sortKey: uuid,
-      },
-    };
-
-    const userResult = await ddb.get(userParams).promise();
-    const userRecord = userResult.Item as UserRecord;
-
-    if (!userRecord) {
-      throw new Error("User not found");
-    }
-
-    return {
-      userRecord,
-    };
-  };
 
 export const battle =
   ({ ddb }: FunctionContext) =>
