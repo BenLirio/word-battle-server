@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent } from "aws-lambda";
 import * as AWS from "aws-sdk";
 import { WordBattleRequest } from "word-battle-types";
 import { functionMap } from "./functions";
+import OpenAI from "openai";
 
 const SHARED_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,7 @@ const SHARED_HEADERS = {
 
 const ddb = new AWS.DynamoDB.DocumentClient();
 const s3 = new AWS.S3();
+const openai = new OpenAI();
 
 const handleOptions = () => ({
   statusCode: 200,
@@ -37,7 +39,9 @@ export const app: any = async (event: APIGatewayProxyEvent) => {
 
   const { funcName, data }: WordBattleRequest = JSON.parse(event.body || "{}");
   try {
-    const response = await functionMap[funcName]({ ddb, s3 })(data as any);
+    const response = await functionMap[funcName]({ ddb, s3, openai })(
+      data as any
+    );
     console.log({
       funcName,
       input: data,

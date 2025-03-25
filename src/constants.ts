@@ -1,5 +1,6 @@
 export const TABLE_NAME = "word-battle-db";
 export const HISTORY_TABLE_NAME = "word-battle-battles-db";
+export const EMBEDDINGS_BUCKET_NAME = "word-battle-embeddings";
 
 export const COSINE_SIMILARITY_THRESHOLDS = {
   IDENTICAL: 0.9,

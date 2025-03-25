@@ -6,8 +6,6 @@ import { UserRecord } from "word-battle-types";
 import { BattleRequest, BattleResponse } from "word-battle-types/dist/battle";
 import { z } from "zod";
 
-const openai = new OpenAI();
-
 const AIResponse = z.object({
   firstPlayerWon: z.boolean(),
   reasonForWin: z.string(),
@@ -25,7 +23,7 @@ const calculateElo = (
 };
 
 export const battle =
-  ({ ddb }: FunctionContext) =>
+  ({ ddb, openai }: FunctionContext) =>
   async ({ uuid }: BattleRequest): Promise<BattleResponse> => {
     const userParams = {
       TableName: TABLE_NAME,
