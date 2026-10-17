@@ -1,6 +1,11 @@
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { HISTORY_TABLE_NAME, TABLE_NAME } from "src/constants";
+import {
+  DEFAULT_LANGUAGE,
+  SUPPORTED_LANGUAGES,
+  normalizeLanguage,
+} from "src/localization/languages";
 import { DBBattleRecord, FunctionContext } from "src/types";
 import { UserRecord } from "word-battle-types";
 import { BattleRequest, BattleResponse } from "word-battle-types/dist/battle";
@@ -16,7 +21,7 @@ const K_FACTOR = 24;
 const calculateElo = (
   playerRating: number,
   opponentRating: number,
-  score: number
+  score: number,
 ): number => {
   const expectedScore = 1 / (1 + 10 ** ((opponentRating - playerRating) / 400));
   return playerRating + K_FACTOR * (score - expectedScore);
@@ -24,7 +29,11 @@ const calculateElo = (
 
 export const battle =
   ({ ddb, openai }: FunctionContext) =>
-  async ({ uuid }: BattleRequest): Promise<BattleResponse> => {
+  async ({
+    uuid,
+    locale,
+  }: BattleRequest & { locale?: string }): Promise<BattleResponse> => {
+    const messageLanguage = normalizeLanguage(locale) || DEFAULT_LANGUAGE;
     const userParams = {
       TableName: TABLE_NAME,
       Key: {
@@ -82,7 +91,13 @@ export const battle =
     const completion = await openai.beta.chat.completions.parse({
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: "Determine the winner of the battle" },
+        {
+          role: "system",
+          content:
+            messageLanguage === DEFAULT_LANGUAGE
+              ? "Determine the winner of the battle"
+              : `Determine the winner of the battle. Write reasonForWin in ${SUPPORTED_LANGUAGES[messageLanguage]}.`,
+        },
         {
           role: "user",
           content: `First players word: "${
@@ -117,9 +132,17 @@ export const battle =
         ? winner.elo - eloBefore
         : loser.elo - eloBefore;
 
-    // Update the users in the database
-    await ddb.put({ TableName: TABLE_NAME, Item: winner }).promise();
-    await ddb.put({ TableName: TABLE_NAME, Item: loser }).promise();
+    // Update only Elo, so translations cached during the battle are kept
+    for (const { uuid, elo } of [winner, loser]) {
+      await ddb
+        .update({
+          TableName: TABLE_NAME,
+          Key: { hashKey: uuid, sortKey: uuid },
+          UpdateExpression: "SET elo = :elo",
+          ExpressionAttributeValues: { ":elo": elo },
+        })
+        .promise();
+    }
 
     const battleDescription =
       completion.choices[0].message.parsed?.reasonForWin!;
@@ -145,6 +168,7 @@ export const battle =
         loser: JSON.stringify(loser),
         eloChange,
         battleDescription,
+        messageLanguage,
       },
     };
 

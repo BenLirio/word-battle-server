@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import AWS from "aws-sdk";
-import { FunctionContext } from "src/types";
+import { FunctionContext, LocalizedUserRecord } from "src/types";
 import {
   RegisterUserRequest,
   RegisterUserResponse,
@@ -22,6 +22,8 @@ import {
 import { embedWord } from "src/ai";
 import { detectPromptInjection } from "src/ai/detectPromptInjection";
 import { detectRacism } from "src/ai/detectRacism";
+import { translateText, TranslationResult } from "src/ai/translateText";
+import { DEFAULT_LANGUAGE } from "src/localization/languages";
 
 interface WordEmbedding {
   leaderboard: string;
@@ -49,18 +51,22 @@ const createUserInDatabase =
     username,
     word,
     leaderboard,
+    english,
   }: {
     uuid: string;
     username: string;
     word: string;
     leaderboard?: string;
+    english: TranslationResult;
   }) => {
-    const userRecord: UserRecord = {
+    const userRecord: LocalizedUserRecord = {
       uuid,
       username,
       word,
       elo: INITIAL_ELO,
       leaderboard,
+      sourceLanguage: english.sourceLanguage,
+      translations: { [DEFAULT_LANGUAGE]: english.translation },
     };
     const userParams = {
       TableName: TABLE_NAME,
@@ -80,7 +86,7 @@ const saveEmbeddingToS3 = async (
   s3: AWS.S3,
   uuid: string,
   leaderboard: string | undefined,
-  embedding: number[]
+  embedding: number[],
 ) => {
   try {
     await s3
@@ -97,7 +103,7 @@ const saveEmbeddingToS3 = async (
 
 const listEmbeddingsFromS3 = async (
   s3: AWS.S3,
-  leaderboard: string
+  leaderboard: string,
 ): Promise<WordEmbedding[]> => {
   const params = {
     Bucket: EMBEDDINGS_BUCKET_NAME,
@@ -118,7 +124,7 @@ const listEmbeddingsFromS3 = async (
         uuid,
         embedding: JSON.parse(objectData.Body!.toString()),
       } as WordEmbedding;
-    }) || []
+    }) || [],
   );
   return embeddings;
 };
@@ -137,23 +143,41 @@ export const registerUser =
       username.length > MAX_USERNAME_LENGTH
     ) {
       throw new Error(
-        `Username must be between ${MIN_USERNAME_LENGTH} and ${MAX_USERNAME_LENGTH} characters`
+        `Username must be between ${MIN_USERNAME_LENGTH} and ${MAX_USERNAME_LENGTH} characters`,
       );
     }
     if (word.length < MIN_WORD_LENGTH || word.length > MAX_WORD_LENGTH) {
       throw new Error(
-        `Word must be between ${MIN_WORD_LENGTH} and ${MAX_WORD_LENGTH} characters`
+        `Word must be between ${MIN_WORD_LENGTH} and ${MAX_WORD_LENGTH} characters`,
       );
     }
-    const [detectionA, detectionB, detectionC, detectionD, embedding] =
+    const [detectionA, detectionB, detectionC, detectionD, embedding, english] =
       await Promise.all([
         detectPromptInjection(ctxt)(word),
         detectPromptInjection(ctxt)(word),
         detectPromptInjection(ctxt)(word),
         detectRacism(ctxt)(word),
         embedWord(ctxt)(word),
+        translateText(ctxt)(word, DEFAULT_LANGUAGE),
       ]);
     const promptInjectionDetections = [detectionA, detectionB, detectionC];
+
+    // Check the English translation too, so instructions written in another
+    // language are judged by the same English-language filters.
+    if (
+      english.translation.trim().toLowerCase() !== word.trim().toLowerCase()
+    ) {
+      const [englishInjection, englishRacism] = await Promise.all([
+        detectPromptInjection(ctxt)(english.translation),
+        detectRacism(ctxt)(english.translation),
+      ]);
+      promptInjectionDetections.push(englishInjection);
+      if (englishRacism.isRacist) {
+        const message = `Word "${word}" has been detected as racist because: ${englishRacism.reason}`;
+        console.error(message);
+        throw new Error(message);
+      }
+    }
     promptInjectionDetections.forEach((detection) => {
       if (detection.isPromptInjection) {
         const message = `Word ${word} has been detected as a prompt injection because: ${detection.reason}`;
@@ -169,15 +193,15 @@ export const registerUser =
 
     const existingEmbeddings = await listEmbeddingsFromS3(
       s3,
-      leaderboard === undefined ? "" : leaderboard
+      leaderboard === undefined ? "" : leaderboard,
     );
     for (const existingEmbedding of existingEmbeddings) {
       if (areEmbeddingsSimilar(embedding, existingEmbedding.embedding)) {
         const duplicateRecord = await getUserRecord(ctxt)(
-          existingEmbedding.uuid
+          existingEmbedding.uuid,
         );
         throw new Error(
-          `Word "${word}" is too similar to existing word "${duplicateRecord.word}" of user "${duplicateRecord.username}"`
+          `Word "${word}" is too similar to existing word "${duplicateRecord.word}" of user "${duplicateRecord.username}"`,
         );
       }
     }
@@ -188,6 +212,7 @@ export const registerUser =
         username,
         word,
         leaderboard,
+        english,
       }),
       saveEmbeddingToS3(s3, uuid, leaderboard, embedding),
     ]);

@@ -16,4 +16,11 @@ export interface DBBattleRecord {
   loser: string;
   eloChange: number;
   battleDescription: string;
+  messageLanguage?: string;
+  messageTranslations?: Record<string, string>;
+}
+
+export interface LocalizedUserRecord extends UserRecord {
+  sourceLanguage?: string;
+  translations?: Record<string, string>;
 }

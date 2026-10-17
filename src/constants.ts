@@ -14,3 +14,4 @@ export const MAX_USERNAME_LENGTH = 20;
 export const MIN_WORD_LENGTH = 3;
 export const MIN_USERNAME_LENGTH = 3;
 export const INITIAL_ELO = 1000;
+export const MAX_TRANSLATIONS_PER_REQUEST = 25;
